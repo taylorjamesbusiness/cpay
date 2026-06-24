@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CPay · Pay with Crypto</title>
+  <title>Invoice · CPay</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -14,6 +15,8 @@
       --text: #fff;
       --dim: #555;
       --green: #00c48c;
+      --red: #ef4444;
+      --blue: #5BA4F5;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,297 +28,655 @@
       min-height: 100dvh;
     }
 
-    .container { max-width: 420px; margin: 0 auto; padding: 16px 16px 48px; }
+    .container { max-width: 420px; margin: 0 auto; padding: 12px 16px 80px; }
 
-    /* HEADER */
-    .header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 0 20px;
+    /* TOP BAR */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0 18px; gap: 8px;
     }
-    .merchant-avatar {
-      width: 44px; height: 44px; border-radius: 12px;
-      background: linear-gradient(135deg, #1a3a2a, #0d2018);
-      border: 1.5px solid rgba(0,196,140,0.3);
+    .back-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; color: #888;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; padding: 7px 12px;
+      display: flex; align-items: center; gap: 5px;
+      font-family: inherit; flex-shrink: 0;
+    }
+    .topbar-center {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .app-logo-small {
+      width: 22px; height: 22px; border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 900; color: var(--green);
+      font-size: 11px; font-weight: 900;
     }
-    .merchant-info { flex: 1; }
-    .merchant-domain { font-size: 10px; color: #444; margin-bottom: 2px; }
-    .merchant-name { font-size: 16px; font-weight: 800; }
-    .verified-badge {
-      background: rgba(0,196,140,0.1);
-      border: 1px solid rgba(0,196,140,0.25);
-      border-radius: 999px; padding: 5px 10px;
-      font-size: 11px; font-weight: 700; color: var(--green);
-      display: flex; align-items: center; gap: 4px;
-    }
+    .app-logo-small.paypal, .app-logo-small.venmo { background: linear-gradient(135deg, #003087, #0066CC); }
+    .app-logo-small.cashapp { background: linear-gradient(135deg, #00D632, #00A825); }
+    .topbar-title { font-size: 13px; font-weight: 700; color: #e5e7eb; }
 
-    /* INVOICE CARD */
-    .invoice-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px; padding: 18px;
-      margin-bottom: 20px;
-    }
-    .invoice-label { font-size: 10px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
-    .invoice-amount { font-size: 42px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 10px; }
-    .invoice-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    .tag {
-      padding: 4px 10px; border-radius: 999px;
+    .how-btn {
+      background: rgba(0,112,186,0.1);
+      border: 1.5px solid rgba(0,112,186,0.35);
+      border-radius: 20px; color: var(--blue);
       font-size: 11px; font-weight: 700;
-    }
-    .tag-id { background: rgba(0,196,140,0.1); color: var(--green); border: 1px solid rgba(0,196,140,0.2); }
-    .tag-apps { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.08); }
-
-    /* AMOUNT PRESETS */
-    .amount-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    .preset-btn {
-      padding: 8px 16px; border-radius: 999px;
-      border: 1.5px solid rgba(255,255,255,0.1);
-      background: transparent; color: #888;
-      font-size: 13px; font-weight: 700;
-      cursor: pointer; transition: all 0.2s; font-family: inherit;
-    }
-    .preset-btn.active {
-      background: var(--green); color: #000;
-      border-color: var(--green);
-    }
-    .preset-btn:hover:not(.active) { border-color: rgba(255,255,255,0.2); color: #ccc; }
-
-    .custom-amount-wrap {
-      display: flex; align-items: center;
-      background: rgba(255,255,255,0.04);
-      border: 1.5px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 10px 14px;
-      gap: 6px;
-    }
-    .custom-amount-wrap:focus-within { border-color: rgba(0,196,140,0.35); }
-    .currency-sign { font-size: 16px; color: #555; font-weight: 700; }
-    .custom-input {
-      flex: 1; background: none; border: none; outline: none;
-      font-size: 16px; font-weight: 700; color: #fff;
-      font-family: inherit;
-    }
-    .custom-input::placeholder { color: #333; }
-
-    /* SECTION TITLE */
-    .section-title {
-      font-size: 10px; color: var(--dim); letter-spacing: 2px;
-      text-transform: uppercase; font-weight: 700;
-      margin-bottom: 12px;
+      padding: 7px 13px; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      font-family: inherit; flex-shrink: 0;
     }
 
-    /* APP CARDS */
-    .app-card {
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: 16px; padding: 14px 16px;
-      margin-bottom: 10px; cursor: pointer;
-      transition: all 0.2s;
-      display: flex; align-items: center; gap: 14px;
-      text-decoration: none; color: inherit;
+    /* AMOUNT */
+    .amount-section { text-align: center; margin-bottom: 4px; }
+    .amount-label { font-size: 9px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+    .amount {
+      font-size: 48px; font-weight: 900; letter-spacing: -2px;
+      background: linear-gradient(135deg, #fff 40%, #7db8f7);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .app-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
-    .app-card.selected { border-color: var(--green); background: rgba(0,196,140,0.05); }
+    .scan-hint { font-size: 11px; color: #444; margin-top: 5px; }
 
-    .app-icon {
-      width: 44px; height: 44px; border-radius: 12px;
+    /* QR */
+    .qr-section { display: flex; flex-direction: column; align-items: center; margin: 18px 0 16px; }
+    .qr-outer {
+      background: #fff; border-radius: 22px; padding: 14px;
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 40px rgba(0,112,186,0.25);
+      animation: qrGlow 4s ease-in-out infinite;
+    }
+    @keyframes qrGlow {
+      0%,100% { box-shadow: 0 8px 30px rgba(0,112,186,0.2); }
+      50% { box-shadow: 0 8px 50px rgba(0,112,186,0.45); }
+    }
+    #qrcode canvas, #qrcode img { display: block; border-radius: 4px; }
+
+    .qr-logo {
+      position: absolute; width: 42px; height: 42px; border-radius: 50%;
+      background: #fff; border: 3px solid #fff;
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 900; flex-shrink: 0;
+      overflow: hidden;
     }
-    .app-icon.paypal { background: linear-gradient(135deg, #003087, #0066CC); }
-    .app-icon.venmo { background: linear-gradient(135deg, #008CFF, #0074D9); }
-    .app-icon.cashapp { background: linear-gradient(135deg, #00D632, #00A825); }
-
-    .app-info { flex: 1; }
-    .app-name { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
-    .app-desc { font-size: 11px; color: #555; margin-bottom: 6px; }
-    .app-token {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: rgba(0,196,140,0.08);
-      border: 1px solid rgba(0,196,140,0.15);
-      border-radius: 999px; padding: 3px 8px;
-      font-size: 10px; font-weight: 700; color: var(--green);
+    .qr-logo-inner {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; color: #fff;
     }
-    .token-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+    .qr-logo-inner.paypal, .qr-logo-inner.venmo { background: linear-gradient(135deg, #003087, #0066CC); }
+    .qr-logo-inner.cashapp { background: linear-gradient(135deg, #00D632, #00A825); }
 
-    .app-arrow { color: #333; font-size: 14px; }
-
-    /* FOOTER NOTE */
-    .footer-note {
-      font-size: 11px; color: #333; text-align: center;
-      line-height: 1.7; margin-top: 20px; padding: 0 8px;
+    /* TIMER */
+    .timer-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 14px 20px;
+      margin-bottom: 14px; text-align: center;
     }
-    .footer-note b { color: #555; }
+    .timer-label { font-size: 9px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+    .timer-value { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: 6px; }
+    .timer-value.urgent { color: var(--red); animation: blink 0.8s ease-in-out infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-    /* BOTTOM BAR */
-    .bottom-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(to top, #050508 60%, transparent);
-      padding: 16px; display: none;
+    /* DETAILS */
+    .details-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 14px 16px; margin-bottom: 14px;
     }
-    .bottom-bar.visible { display: block; }
-    .pay-btn {
-      width: 100%; max-width: 420px; margin: 0 auto; display: flex;
-      align-items: center; justify-content: space-between;
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: center; padding: 7px 0;
+    }
+    .detail-row + .detail-row { border-top: 1px solid rgba(255,255,255,0.04); }
+    .detail-label { font-size: 11px; color: #555; font-weight: 600; }
+    .detail-value { font-size: 11px; color: #ccc; font-family: monospace; font-weight: 500; }
+
+    .status-pill {
+      border-radius: 999px; padding: 3px 10px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
+    }
+    .status-pending { background: rgba(255,255,255,0.08); color: #888; border: 1px solid rgba(255,255,255,0.1); }
+    .status-paid { background: rgba(0,196,140,0.12); color: var(--green); border: 1px solid rgba(0,196,140,0.2); }
+    .status-expired { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+    /* ADDRESS */
+    .address-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 14px 16px; margin-bottom: 16px;
+    }
+    .address-label { font-size: 9px; color: #555; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
+    .address-text { font-size: 11px; font-family: monospace; color: #666; word-break: break-all; line-height: 1.6; margin-bottom: 10px; }
+    .copy-btn {
+      width: 100%; padding: 11px;
+      border: 1.5px solid rgba(0,112,186,0.3); border-radius: 12px;
+      background: rgba(0,82,165,0.1); color: var(--blue);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .copy-btn.copied { border-color: rgba(0,196,140,0.4); color: var(--green); background: rgba(0,196,140,0.08); }
+
+    /* SEND BUTTON */
+    .send-btn {
+      width: 100%; padding: 0;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 18px; background: var(--card);
+      cursor: pointer; font-family: inherit;
+      display: flex; align-items: stretch;
+      overflow: hidden; margin-bottom: 12px;
+      transition: all 0.25s;
+    }
+    .send-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .send-btn.paypal-btn, .send-btn.venmo-btn { border-color: rgba(0,112,186,0.35); background: linear-gradient(160deg, #0e1624, #0a1020); }
+    .send-btn.cashapp-btn { border-color: rgba(0,196,140,0.35); background: linear-gradient(160deg, #0a1a0e, #061208); }
+
+    .send-btn-icon {
+      width: 54px; display: flex; align-items: center; justify-content: center;
+      border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+    }
+    .send-icon-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 900; color: #fff;
+    }
+    .send-icon-circle.paypal, .send-icon-circle.venmo { background: linear-gradient(135deg, #003087, #0066CC); }
+    .send-icon-circle.cashapp { background: linear-gradient(135deg, #00D632, #00A825); }
+
+    .send-btn-body {
+      flex: 1; padding: 14px 12px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left;
+    }
+    .send-btn-title { font-size: 15px; font-weight: 800; color: #fff; }
+    .send-btn-sub { font-size: 11px; color: #555; font-weight: 600; }
+    .send-btn-sub .highlight { color: var(--blue); font-weight: 700; }
+    .send-btn-sub .highlight.green { color: var(--green); }
+    .send-btn-arrow { display: flex; align-items: center; padding-right: 14px; color: #333; }
+
+    /* SUCCESS OVERLAY */
+    .success-overlay {
+      position: fixed; inset: 0;
+      background: rgba(5,5,8,0.97);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.4s;
+      padding: 32px;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: all; }
+
+    .success-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(0,196,140,0.12);
+      border: 2px solid rgba(0,196,140,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin-bottom: 20px;
+      animation: scaleIn 0.5s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+    .success-title { font-size: 28px; font-weight: 900; color: var(--green); margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: #555; margin-bottom: 32px; text-align: center; line-height: 1.6; }
+
+    .success-details {
+      width: 100%; background: var(--card);
+      border: 1px solid var(--border); border-radius: 18px; padding: 16px;
+      margin-bottom: 24px;
+    }
+    .success-row {
+      display: flex; justify-content: space-between; padding: 7px 0;
+      font-size: 12px;
+    }
+    .success-row + .success-row { border-top: 1px solid rgba(255,255,255,0.04); }
+    .success-row-label { color: #555; font-weight: 600; }
+    .success-row-value { color: #ccc; font-family: monospace; }
+    .success-row-value.green { color: var(--green); font-weight: 800; }
+
+    .success-done-btn {
+      width: 100%; padding: 16px;
       background: var(--green); border: none; border-radius: 16px;
-      padding: 16px 20px; cursor: pointer;
-      font-family: inherit; transition: all 0.2s;
+      color: #000; font-size: 16px; font-weight: 800;
+      cursor: pointer; font-family: inherit;
     }
-    .pay-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .pay-btn-left { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
-    .pay-btn-label { font-size: 11px; color: rgba(0,0,0,0.6); font-weight: 600; }
-    .pay-btn-amount { font-size: 18px; font-weight: 900; color: #000; }
-    .pay-btn-right { font-size: 15px; font-weight: 800; color: #000; display: flex; align-items: center; gap: 6px; }
+
+    /* HOW TO PAY MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: #0d0d16; border-radius: 28px 28px 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+      padding: 0 0 40px; width: 100%; max-width: 420px;
+      transform: translateY(50px); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      max-height: 90dvh; overflow-y: auto;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header {
+      position: sticky; top: 0; background: #0d0d16;
+      padding: 16px 24px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .modal-handle { width: 36px; height: 4px; background: #2a2a2a; border-radius: 99px; margin: 0 auto 14px; }
+    .modal-title-row { display: flex; align-items: center; justify-content: space-between; }
+    .modal h2 { font-size: 17px; font-weight: 900; }
+    .modal-x {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; color: #666; font-size: 14px;
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .modal-body { padding: 20px 24px 0; }
+    .step {
+      display: flex; gap: 14px; margin-bottom: 16px;
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px; padding: 14px;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(0,112,186,0.15); border: 1.5px solid rgba(0,112,186,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: var(--blue);
+    }
+    .step-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+    .step-desc { font-size: 11px; color: #666; line-height: 1.6; }
+    .step-desc .hl { color: var(--blue); font-weight: 700; }
+    .modal-close {
+      width: calc(100% - 48px); margin: 20px 24px 0;
+      padding: 14px; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px;
+      background: rgba(255,255,255,0.04); color: #888;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+
+    .expired-banner {
+      text-align: center; color: var(--red); font-size: 13px; font-weight: 600;
+      padding: 12px; background: rgba(239,68,68,0.08); border-radius: 12px;
+      border: 1px solid rgba(239,68,68,0.2); margin-bottom: 12px; display: none;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <!-- Header -->
-  <div class="header">
-    <div class="merchant-avatar" id="merchantAvatar">V</div>
-    <div class="merchant-info">
-      <div class="merchant-domain">cpay-cash.app</div>
-      <div class="merchant-name" id="merchantName">Pay Valentina</div>
-    </div>
-    <div class="verified-badge">✓ Verified merchant</div>
-  </div>
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">✓</div>
+  <div class="success-title">Payment Received!</div>
+  <div class="success-sub">Your payment has been confirmed<br>on the Solana network.</div>
 
-  <!-- Invoice Card -->
-  <div class="invoice-card">
-    <div class="invoice-label">Invoice Total</div>
-    <div class="invoice-amount" id="displayAmount">$0.00</div>
-    <div class="invoice-tags">
-      <span class="tag tag-id" id="invoiceIdTag">INV-XXXX-XXXX</span>
-      <span class="tag tag-apps">Pay with Cash App, PayPal, Venmo</span>
+  <div class="success-details">
+    <div class="success-row">
+      <span class="success-row-label">Amount</span>
+      <span class="success-row-value green" id="s-amount">$0.00</span>
     </div>
-
-    <!-- Amount Presets -->
-    <div class="amount-presets" id="presets">
-      <button class="preset-btn active" data-amount="50" onclick="selectPreset(this, 50)">$50</button>
-      <button class="preset-btn" data-amount="100" onclick="selectPreset(this, 100)">$100</button>
-      <button class="preset-btn" data-amount="150" onclick="selectPreset(this, 150)">$150</button>
-      <button class="preset-btn" data-amount="200" onclick="selectPreset(this, 200)">$200</button>
+    <div class="success-row">
+      <span class="success-row-label">Invoice</span>
+      <span class="success-row-value" id="s-invoice">—</span>
     </div>
-
-    <div class="custom-amount-wrap">
-      <span class="currency-sign">$</span>
-      <input class="custom-input" id="customInput" type="number" placeholder="Enter custom amount" oninput="onCustomInput(this)" />
+    <div class="success-row">
+      <span class="success-row-label">Paid via</span>
+      <span class="success-row-value" id="s-app">—</span>
+    </div>
+    <div class="success-row">
+      <span class="success-row-label">Network</span>
+      <span class="success-row-value">Solana</span>
+    </div>
+    <div class="success-row">
+      <span class="success-row-label">Status</span>
+      <span class="success-row-value green">CONFIRMED ✓</span>
     </div>
   </div>
 
-  <!-- App Selection -->
-  <div class="section-title">Select Payment App</div>
+  <button class="success-done-btn" onclick="document.getElementById('successOverlay').classList.remove('show')">Done</button>
+</div>
 
-  <div class="app-card" id="card-paypal" onclick="selectApp('paypal')">
-    <div class="app-icon paypal">P</div>
-    <div class="app-info">
-      <div class="app-name">PayPal</div>
-      <div class="app-desc">Send via PayPal balance or bank</div>
-      <span class="app-token"><span class="token-dot"></span>PYUSD · Solana</span>
+<!-- How to Pay Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-handle"></div>
+      <div class="modal-title-row">
+        <h2 id="modalTitle">💡 How to pay</h2>
+        <div class="modal-x" onclick="closeModal()">✕</div>
+      </div>
     </div>
-    <div class="app-arrow">›</div>
-  </div>
-
-  <div class="app-card" id="card-venmo" onclick="selectApp('venmo')">
-    <div class="app-icon venmo">V</div>
-    <div class="app-info">
-      <div class="app-name">Venmo</div>
-      <div class="app-desc">Fast payments via Venmo app</div>
-      <span class="app-token"><span class="token-dot"></span>PYUSD · Solana</span>
-    </div>
-    <div class="app-arrow">›</div>
-  </div>
-
-  <div class="app-card" id="card-cashapp" onclick="selectApp('cashapp')">
-    <div class="app-icon cashapp">$</div>
-    <div class="app-info">
-      <div class="app-name">Cash App</div>
-      <div class="app-desc">Pay with Cash App balance</div>
-      <span class="app-token"><span class="token-dot"></span>USDC · Solana</span>
-    </div>
-    <div class="app-arrow">›</div>
-  </div>
-
-  <div class="footer-note">
-    Payments are processed on <b>Solana</b> using stablecoins (PYUSD / USDC).<br>
-    Each invoice is created per-session and securely linked to your device.
+    <div class="modal-body" id="modalBody"></div>
+    <button class="modal-close" onclick="closeModal()">Got it ✓</button>
   </div>
 </div>
 
-<!-- Bottom CTA -->
-<div class="bottom-bar" id="bottomBar">
-  <button class="pay-btn" id="payBtn" onclick="proceed()">
-    <div class="pay-btn-left">
-      <span class="pay-btn-label" id="payBtnLabel">Paying with PayPal</span>
-      <span class="pay-btn-amount" id="payBtnAmount">$0.00</span>
+<div class="container">
+  <div class="topbar">
+    <button class="back-btn" onclick="history.back()">‹ Back</button>
+    <div class="topbar-center">
+      <div class="app-logo-small" id="topAppLogo"></div>
+      <span class="topbar-title" id="topTitle">Pay · CPay</span>
     </div>
-    <div class="pay-btn-right">
-      Pay with <span id="payBtnAppName">PayPal</span> ›
+    <button class="how-btn" onclick="openModal()">ⓘ How to pay</button>
+  </div>
+
+  <div class="amount-section">
+    <div class="amount-label">Amount Due</div>
+    <div class="amount" id="inv-amount">$0.00</div>
+    <div class="scan-hint" id="inv-hint">Send PYUSD on Solana to the address below</div>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-outer">
+      <div id="qrcode"></div>
+      <div class="qr-logo">
+        <div class="qr-logo-inner" id="qrLogoInner"></div>
+      </div>
     </div>
+  </div>
+
+  <div class="timer-box">
+    <div class="timer-label">Time Remaining</div>
+    <div class="timer-value" id="countdown">60 : 00</div>
+  </div>
+
+  <div class="details-card">
+    <div class="detail-row">
+      <span class="detail-label">Reference</span>
+      <span class="detail-value" id="inv-code">—</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Network</span>
+      <span class="detail-value" id="inv-network">Solana · PYUSD</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Paid via</span>
+      <span class="detail-value" id="inv-source">—</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Status</span>
+      <span class="status-pill status-pending" id="inv-status">AWAITING PAYMENT</span>
+    </div>
+  </div>
+
+  <div class="address-box">
+    <div class="address-label" id="addressLabel">PYUSD WALLET ADDRESS (SOLANA)</div>
+    <div class="address-text" id="inv-address">—</div>
+    <button class="copy-btn" id="copyBtn" onclick="copyAddress()">
+      📋 Copy address
+    </button>
+  </div>
+
+  <div class="expired-banner" id="expired-banner">⚠️ This invoice has expired</div>
+
+  <button class="send-btn" id="btn-send" onclick="goToPayment()">
+    <div class="send-btn-icon">
+      <div class="send-icon-circle" id="sendIconCircle"></div>
+    </div>
+    <div class="send-btn-body">
+      <div class="send-btn-title" id="sendBtnTitle">Open App → Send</div>
+      <div class="send-btn-sub" id="sendBtnSub"></div>
+    </div>
+    <div class="send-btn-arrow">›</div>
   </button>
 </div>
 
 <script>
-  // URL params থেকে invoice info নাও
-  const params = new URLSearchParams(window.location.search);
-  let selectedAmount = Number(params.get("amount")) || 50;
-  let selectedApp = null;
+  const params     = new URLSearchParams(window.location.search);
+  const invoiceId  = params.get("id");
+  const amountParam = params.get("amount");
+  const appParam   = params.get("app") || "paypal"; // paypal | venmo | cashapp
+  const merchantParam = params.get("merchant") || "Valentina";
 
-  // Auto-generate invoice ID
-  const r = () => Math.random().toString(36).substring(2, 6).toUpperCase();
-  const invoiceId = params.get("id") || ("INV-" + r() + "-" + r());
+  const SUPABASE_URL = "https://ouecuohshzyefyxhjahn.supabase.co/functions/v1";
 
-  // Merchant info
-  const merchantName = params.get("merchant") || "Valentina";
-  const merchantInitial = merchantName.charAt(0).toUpperCase();
-  document.getElementById("merchantAvatar").textContent = merchantInitial;
-  document.getElementById("merchantName").textContent = "Pay " + merchantName;
-  document.getElementById("invoiceIdTag").textContent = invoiceId;
-  updateAmountDisplay();
+  // App configs
+  const APP_CONFIG = {
+    paypal: {
+      name: "PayPal",
+      token: "PYUSD",
+      tokenLabel: "PYUSD · Solana",
+      hint: "Send PYUSD on Solana to the address below",
+      addressLabel: "PYUSD WALLET ADDRESS (SOLANA)",
+      networkLabel: "Solana · PYUSD",
+      deeplink: "https://www.paypal.com/myaccount/crypto",
+      sendBtnTitle: "Open PayPal → Send PYUSD",
+      sendBtnSub: '<span class="highlight">Finances → Crypto → PayPal USD</span>',
+      modalSteps: [
+        { title: "Open PayPal app", desc: 'Go to <span class="hl">Finances → Crypto</span> and tap <b>PayPal USD (PYUSD)</b>.' },
+        { title: "Send on Solana", desc: 'Tap <span class="hl">Send</span> → <b>Send on chain</b> → pick <b>Solana</b>. Paste the wallet address.' },
+        { title: "Enter exact amount", desc: 'Enter <span class="hl" id="modal-amount">$0.00 PYUSD</span> exactly, review fees and tap <b>Send now</b>.' }
+      ]
+    },
+    venmo: {
+      name: "Venmo",
+      token: "PYUSD",
+      tokenLabel: "PYUSD · Solana",
+      hint: "Send PYUSD on Solana to the address below",
+      addressLabel: "PYUSD WALLET ADDRESS (SOLANA)",
+      networkLabel: "Solana · PYUSD",
+      deeplink: "https://venmo.com/crypto",
+      sendBtnTitle: "Open Venmo → Send PYUSD",
+      sendBtnSub: '<span class="highlight">Crypto → PayPal USD (PYUSD)</span>',
+      modalSteps: [
+        { title: "Open Venmo app", desc: 'Tap the <span class="hl">☰ Menu</span> and go to <b>Crypto</b>.' },
+        { title: "Send PYUSD on Solana", desc: 'Select <span class="hl">PYUSD</span> → <b>Send</b> → pick <b>Solana network</b>. Paste the wallet address.' },
+        { title: "Enter exact amount", desc: 'Enter <span class="hl" id="modal-amount">$0.00 PYUSD</span> exactly and confirm.' }
+      ]
+    },
+    cashapp: {
+      name: "Cash App",
+      token: "USDC",
+      tokenLabel: "USDC · Solana",
+      hint: "Send USDC on Solana to the address below",
+      addressLabel: "USDC WALLET ADDRESS (SOLANA)",
+      networkLabel: "Solana · USDC",
+      deeplink: "cashapp://",
+      sendBtnTitle: "Open Cash App → Send USDC",
+      sendBtnSub: '<span class="highlight green">Bitcoin → Send → Switch to USDC → Solana</span>',
+      modalSteps: [
+        { title: "Open Cash App", desc: 'Tap the <span class="hl">$</span> icon at the bottom and select <b>Bitcoin</b>.' },
+        { title: "Send USDC on Solana", desc: 'Tap <span class="hl">Send</span>, switch asset to <b>USDC</b>, pick <b>Solana</b> network. Paste the wallet address.' },
+        { title: "Enter exact amount", desc: 'Enter <span class="hl" id="modal-amount">$0.00 USDC</span> exactly and confirm.' }
+      ]
+    }
+  };
 
-  function updateAmountDisplay() {
-    document.getElementById("displayAmount").textContent = "$" + Number(selectedAmount).toFixed(2);
-    if (selectedApp) {
-      document.getElementById("payBtnAmount").textContent = "$" + Number(selectedAmount).toFixed(2);
+  const cfg = APP_CONFIG[appParam] || APP_CONFIG.paypal;
+
+  // Fixed addresses (production-এ per-invoice unique wallet হবে)
+  const DEPOSIT_ADDRESSES = {
+    pyusd: "Bk6HHmSVYwM3veHS9LpWq2TvGKjah9jmuBhCyrGu2TNa",
+    usdc:  "Bk6HHmSVYwM3veHS9LpWq2TvGKjah9jmuBhCyrGu2TNa"
+  };
+  const depositAddress = cfg.token === "USDC" ? DEPOSIT_ADDRESSES.usdc : DEPOSIT_ADDRESSES.pyusd;
+
+  let timerInterval = null;
+  let payCheckTimer = null;
+  let invoice = null;
+
+  // Setup UI based on app
+  function setupAppUI() {
+    // Top bar
+    const logoEl = document.getElementById("topAppLogo");
+    logoEl.className = "app-logo-small " + appParam;
+    logoEl.textContent = cfg.name.charAt(0);
+    document.getElementById("topTitle").textContent = `Pay ${merchantParam} · ${cfg.name}`;
+
+    // QR logo
+    const qrLogo = document.getElementById("qrLogoInner");
+    qrLogo.className = "qr-logo-inner " + appParam;
+    qrLogo.textContent = cfg.name.charAt(0);
+
+    // Hint, labels
+    document.getElementById("inv-hint").textContent = cfg.hint;
+    document.getElementById("addressLabel").textContent = cfg.addressLabel;
+    document.getElementById("inv-network").textContent = cfg.networkLabel;
+    document.getElementById("inv-source").textContent = cfg.name;
+
+    // Send button
+    const sendBtn = document.getElementById("btn-send");
+    sendBtn.className = "send-btn " + appParam + "-btn";
+    const sendIcon = document.getElementById("sendIconCircle");
+    sendIcon.className = "send-icon-circle " + appParam;
+    sendIcon.textContent = cfg.name.charAt(0);
+    document.getElementById("sendBtnTitle").textContent = cfg.sendBtnTitle;
+    document.getElementById("sendBtnSub").innerHTML = cfg.sendBtnSub;
+
+    // Modal
+    buildModal();
+  }
+
+  function buildModal() {
+    document.getElementById("modalTitle").textContent = `💡 How to pay with ${cfg.name}`;
+    const body = document.getElementById("modalBody");
+    body.innerHTML = cfg.modalSteps.map((s, i) => `
+      <div class="step">
+        <div class="step-num">${i + 1}</div>
+        <div>
+          <div class="step-title">${s.title}</div>
+          <div class="step-desc">${s.desc}</div>
+        </div>
+      </div>
+    `).join('<div style="height:8px"></div>');
+  }
+
+  async function loadInvoice() {
+    setupAppUI();
+
+    try {
+      const url = `${SUPABASE_URL}/get-invoice?id=${encodeURIComponent(invoiceId)}&amount=${encodeURIComponent(amountParam || "0")}&app=${appParam}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("failed");
+      invoice = await res.json();
+    } catch (e) {
+      invoice = {
+        invoice_code: invoiceId,
+        amount_usd: amountParam || 0,
+        app: appParam,
+        status: "pending",
+        created_at: new Date().toISOString()
+      };
+    }
+
+    renderInvoice();
+  }
+
+  function renderInvoice() {
+    const amount = Number(invoice.amount_usd || amountParam || 0).toFixed(2);
+
+    document.getElementById("inv-amount").textContent = `$${amount}`;
+    document.getElementById("inv-code").textContent = invoice.invoice_code || invoiceId;
+    document.getElementById("inv-address").textContent = depositAddress;
+
+    // Update modal amount
+    document.querySelectorAll("#modal-amount").forEach(el => {
+      el.textContent = `$${amount} ${cfg.token}`;
+    });
+
+    // Success overlay
+    document.getElementById("s-amount").textContent = `$${amount}`;
+    document.getElementById("s-invoice").textContent = invoice.invoice_code || invoiceId;
+    document.getElementById("s-app").textContent = cfg.name;
+
+    // QR Code
+    new QRCode(document.getElementById("qrcode"), {
+      text: depositAddress,
+      width: 200, height: 200,
+      colorDark: "#000000", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    if (invoice.status === "paid") {
+      setPaidUI();
+    } else {
+      startTimer();
+      pollPaymentStatus();
+      payCheckTimer = setInterval(pollPaymentStatus, 15000);
     }
   }
 
-  function selectPreset(btn, amount) {
-    selectedAmount = amount;
-    document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("customInput").value = "";
-    updateAmountDisplay();
+  function startTimer() {
+    const createdAt = new Date(invoice.created_at || Date.now());
+    const expiresAt = createdAt.getTime() + 60 * 60 * 1000;
+
+    function tick() {
+      const diff = expiresAt - Date.now();
+      const cd = document.getElementById("countdown");
+      if (diff <= 0) {
+        cd.textContent = "00 : 00";
+        cd.classList.add("urgent");
+        document.getElementById("expired-banner").style.display = "block";
+        document.getElementById("btn-send").disabled = true;
+        const st = document.getElementById("inv-status");
+        st.textContent = "EXPIRED";
+        st.className = "status-pill status-expired";
+        clearInterval(timerInterval);
+        return;
+      }
+      if (diff < 5 * 60 * 1000) cd.classList.add("urgent");
+      const m = String(Math.floor(diff / 60000)).padStart(2, "0");
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
+      cd.textContent = `${m} : ${s}`;
+    }
+    tick();
+    timerInterval = setInterval(tick, 1000);
   }
 
-  function onCustomInput(input) {
-    if (input.value) {
-      selectedAmount = Number(input.value);
-      document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
-      updateAmountDisplay();
+  function setPaidUI() {
+    const st = document.getElementById("inv-status");
+    st.textContent = "PAID";
+    st.className = "status-pill status-paid";
+    if (timerInterval) clearInterval(timerInterval);
+    if (payCheckTimer) clearInterval(payCheckTimer);
+    const cd = document.getElementById("countdown");
+    cd.classList.remove("urgent");
+    cd.style.color = "var(--green)";
+    // Show success overlay
+    document.getElementById("successOverlay").classList.add("show");
+  }
+
+  async function pollPaymentStatus() {
+    if (!invoiceId) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/check-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice_id: invoiceId, app: appParam })
+      });
+      const data = await res.json();
+      if (data.status === "paid") {
+        setPaidUI();
+        if (payCheckTimer) clearInterval(payCheckTimer);
+      }
+    } catch (e) {}
+  }
+
+  function copyAddress() {
+    navigator.clipboard.writeText(depositAddress).then(() => {
+      const btn = document.getElementById("copyBtn");
+      btn.textContent = "✓ Copied!";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = "📋 Copy address";
+        btn.classList.remove("copied");
+      }, 2500);
+    });
+  }
+
+  function goToPayment() {
+    // App deeplinks
+    const deeplinks = {
+      paypal: "paypal://crypto",
+      venmo: "venmo://",
+      cashapp: "cashapp://"
+    };
+    // Try app deeplink first, fallback to web
+    const appLink = deeplinks[appParam];
+    const webLink = cfg.deeplink;
+
+    // Mobile deeplink try করো, fail হলে web open
+    window.location.href = appLink;
+    setTimeout(() => { window.open(webLink, "_blank"); }, 1500);
+  }
+
+  function openModal() { document.getElementById("modalOverlay").classList.add("open"); }
+  function closeModal(e) {
+    if (!e || e.target === document.getElementById("modalOverlay")) {
+      document.getElementById("modalOverlay").classList.remove("open");
     }
   }
 
-  function selectApp(app) {
-    selectedApp = app;
-    document.querySelectorAll(".app-card").forEach(c => c.classList.remove("selected"));
-    document.getElementById("card-" + app).classList.add("selected");
-
-    const labels = { paypal: "PayPal", venmo: "Venmo", cashapp: "Cash App" };
-    const label = labels[app];
-    document.getElementById("payBtnLabel").textContent = "Paying with " + label;
-    document.getElementById("payBtnAmount").textContent = "$" + Number(selectedAmount).toFixed(2);
-    document.getElementById("payBtnAppName").textContent = label;
-    document.getElementById("bottomBar").classList.add("visible");
-  }
-
-  function proceed() {
-    if (!selectedApp || !selectedAmount) return;
-    const url = `/pay/valentina?id=${invoiceId}&amount=${selectedAmount}&app=${selectedApp}&merchant=${encodeURIComponent(merchantName)}`;
-    window.location.href = url;
-  }
+  loadInvoice();
 </script>
 </body>
 </html>
