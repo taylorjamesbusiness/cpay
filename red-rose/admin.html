@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Red Rose</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'DM Sans',sans-serif; background:#000; color:#fff; min-height:100vh; }
+
+/* ══════ LOGIN ══════ */
+.login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; background: radial-gradient(circle at 30% 50%, rgba(0,200,81,0.10) 0%, transparent 65%); }
+.login-card { width:100%; max-width:380px; background:#0d0d0d; border:1px solid rgba(0,200,81,0.22); border-radius:24px; padding:38px 30px; box-shadow:0 12px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.03) inset; }
+.login-logo { width:60px; height:60px; background:linear-gradient(135deg,#00C851,#00903c); border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900; color:#fff; margin:0 auto 22px; box-shadow:0 6px 28px rgba(0,200,81,0.45); }
+.login-title { text-align:center; font-size:21px; font-weight:800; margin-bottom:5px; letter-spacing:-0.3px; }
+.login-sub { text-align:center; color:rgba(255,255,255,0.35); font-size:13px; margin-bottom:30px; font-weight:500; }
+.field-label { font-size:11px; font-weight:700; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:7px; }
+.field-input { width:100%; background:#161616; border:1.5px solid rgba(255,255,255,0.09); border-radius:14px; padding:13px 16px; font-size:15px; color:#fff; outline:none; font-family:'DM Sans',sans-serif; margin-bottom:18px; transition:all 0.25s; }
+.field-input:focus { border-color:rgba(0,200,81,0.6); box-shadow:0 0 0 4px rgba(0,200,81,0.10); }
+.login-btn { width:100%; background:linear-gradient(135deg,#00C851,#00903c); color:#fff; border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; box-shadow:0 5px 24px rgba(0,200,81,0.35); transition:all 0.25s; letter-spacing:0.02em; }
+.login-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,200,81,0.45); }
+.login-btn:active { transform:translateY(0); }
+.login-error { color:#ff4d4d; font-size:13px; text-align:center; margin-top:14px; display:none; font-weight:600; }
+
+/* ══════ DASHBOARD ══════ */
+#dashboard { display:none; }
+.topbar { background:rgba(10,10,10,0.95); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,0.06); padding:13px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.topbar-logo { display:flex; align-items:center; gap:10px; }
+.topbar-icon { width:36px; height:36px; background:linear-gradient(135deg,#00C851,#00903c); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:900; color:#fff; box-shadow:0 3px 12px rgba(0,200,81,0.35); }
+.topbar-title { font-size:16px; font-weight:800; letter-spacing:-0.2px; }
+.topbar-sub { font-size:11px; color:rgba(255,255,255,0.3); font-weight:500; }
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.last-updated { font-size:11px; color:rgba(255,255,255,0.25); display:none; }
+.last-updated.show { display:block; }
+.logout-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); color:rgba(255,255,255,0.55); padding:7px 15px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+.logout-btn:hover { background:rgba(255,80,80,0.12); border-color:rgba(255,80,80,0.3); color:#ff6b6b; }
+
+.content { padding:20px; max-width:1200px; margin:0 auto; }
+
+/* ══════ STAT CARDS ══════ */
+.stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+@media (min-width:640px) { .stats-grid { grid-template-columns:repeat(4,1fr); gap:14px; } }
+.stat-card { background:#0d0d0d; border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:18px 16px; position:relative; overflow:hidden; }
+.stat-card::before { content:''; position:absolute; top:0; right:0; width:60px; height:60px; border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); transform:translate(20px,-20px); }
+.stat-card.green { border-color:rgba(0,200,81,0.18); background:linear-gradient(135deg,#0d0d0d,#0a1a0f); }
+.stat-card.green::before { background:radial-gradient(circle, rgba(0,200,81,0.08) 0%, transparent 70%); }
+.stat-icon { font-size:20px; margin-bottom:10px; }
+.stat-label { font-size:10px; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:0.12em; font-weight:700; margin-bottom:6px; }
+.stat-val { font-size:24px; font-weight:800; color:#fff; letter-spacing:-0.5px; line-height:1; }
+.stat-card.green .stat-val { color:#00C851; }
+.stat-sub { font-size:11px; color:rgba(255,255,255,0.28); margin-top:5px; font-weight:500; }
+
+/* ══════ TABS ══════ */
+.tabs { display:flex; gap:8px; margin-bottom:18px; }
+.tab-btn { background:#111; border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.45); padding:9px 18px; border-radius:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.22s; flex:1; text-align:center; }
+@media (min-width:480px) { .tab-btn { flex:none; } }
+.tab-btn.active { background:rgba(0,200,81,0.12); border-color:rgba(0,200,81,0.3); color:#00C851; }
+
+/* ══════ FILTER BAR ══════ */
+.filter-bar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+.filter-select { background:#111; border:1px solid rgba(255,255,255,0.09); color:#fff; padding:9px 13px; border-radius:11px; font-size:13px; font-family:'DM Sans',sans-serif; outline:none; cursor:pointer; font-weight:500; }
+.filter-select option { background:#111; }
+.search-input { background:#111; border:1px solid rgba(255,255,255,0.09); color:#fff; padding:9px 13px; border-radius:11px; font-size:13px; font-family:'DM Sans',sans-serif; outline:none; flex:1; min-width:160px; font-weight:500; }
+.search-input::placeholder { color:rgba(255,255,255,0.22); }
+.search-input:focus, .filter-select:focus { border-color:rgba(0,200,81,0.5); box-shadow:0 0 0 3px rgba(0,200,81,0.08); }
+.refresh-btn { background:rgba(0,200,81,0.09); border:1px solid rgba(0,200,81,0.28); color:#00C851; padding:9px 16px; border-radius:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; white-space:nowrap; }
+.refresh-btn:hover { background:rgba(0,200,81,0.18); }
+
+/* ══════ PAGINATION ══════ */
+.pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+.page-btn { background: #111; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); width: 32px; height: 32px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.page-btn:hover:not(:disabled) { background: #222; border-color: rgba(0,200,81,0.3); }
+.page-btn.active { background: rgba(0,200,81,0.2); border-color: rgba(0,200,81,0.5); color: #00C851; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ══════ TABLE ══════ */
+.table-wrap { background:#0d0d0d; border:1px solid rgba(255,255,255,0.07); border-radius:18px; overflow:hidden; }
+.table-scroll { overflow-x:auto; display:none; }
+@media (min-width:700px) { .table-scroll { display:block; } }
+table { width:100%; border-collapse:collapse; }
+thead th { background:#111; padding:12px 16px; text-align:left; font-size:10px; font-weight:700; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.1em; white-space:nowrap; border-bottom:1px solid rgba(255,255,255,0.06); }
+tbody td { padding:14px 16px; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.04); white-space:nowrap; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,0.02); }
+
+/* ══════ MOBILE CARDS ══════ */
+.mobile-list { display:block; }
+@media (min-width:700px) { .mobile-list { display:none; } }
+.m-card { padding:16px; border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; }
+.m-card:last-child { border-bottom:none; }
+.m-card:active { background:rgba(255,255,255,0.02); }
+.m-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.m-left { flex:1; min-width:0; }
+.m-invoice { font-family:monospace; font-size:12px; color:rgba(255,255,255,0.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.m-time { font-size:11px; color:rgba(255,255,255,0.28); margin-top:3px; font-weight:500; }
+.m-amount { font-size:20px; font-weight:800; color:#fff; letter-spacing:-0.5px; }
+.m-meta { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.m-pill { font-size:11px; color:rgba(255,255,255,0.35); background:rgba(255,255,255,0.05); padding:3px 9px; border-radius:999px; font-weight:600; }
+.m-expire { font-size:12px; color:rgba(255,200,0,0.85); font-weight:700; background:rgba(255,200,0,0.07); padding:3px 9px; border-radius:999px; }
+.m-expired-pill { font-size:12px; color:#ff5050; font-weight:700; background:rgba(255,80,80,0.07); padding:3px 9px; border-radius:999px; }
+.m-empty { text-align:center; padding:48px 20px; color:rgba(255,255,255,0.28); font-size:14px; }
+.m-card-w { padding:16px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.m-card-w:last-child { border-bottom:none; }
+
+/* ══════ BADGES ══════ */
+.badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; }
+.badge.settled, .badge.completed, .badge.paid { background:rgba(0,200,81,0.12); border:1px solid rgba(0,200,81,0.28); color:#00C851; }
+.badge.new, .badge.pending { background:rgba(255,200,0,0.10); border:1px solid rgba(255,200,0,0.28); color:#ffc800; }
+.badge.expired { background:rgba(255,80,80,0.10); border:1px solid rgba(255,80,80,0.28); color:#ff5050; }
+.badge.processing { background:rgba(100,180,255,0.10); border:1px solid rgba(100,180,255,0.28); color:#64b4ff; }
+.badge-dot { width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* ══════ MISC ══════ */
+.expire-text { font-size:12px; color:rgba(255,200,0,0.85); font-weight:700; }
+.expired-text { font-size:12px; color:#ff5050; font-weight:600; }
+.table-footer { padding:13px 16px; border-top:1px solid rgba(255,255,255,0.06); font-size:12px; color:rgba(255,255,255,0.28); font-weight:500; }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:99px; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">$</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Red Rose</div>
+    <div class="field-label">Username</div>
+    <input type="text" id="loginUser" class="field-input" placeholder="Enter username" autocomplete="username">
+    <div class="field-label">Password</div>
+    <input type="password" id="loginPass" class="field-input" placeholder="Enter password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="loginError">Invalid username or password</div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-icon">$</div>
+      <div>
+        <div class="topbar-title">Admin Panel</div>
+        <div class="topbar-sub">Red Rose</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="last-updated" id="lastUpdated"></span>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Total Settled</div>
+        <div class="stat-val" id="statSettled">$0.00</div>
+        <div class="stat-sub" id="statSettledCount">0 payments</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🏦</div>
+        <div class="stat-label">Available Balance</div>
+        <div class="stat-val" id="statAvailable" style="color:#00C851;">$0.00</div>
+        <div class="stat-sub">Total Settled - Withdrawn</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-label">Pending</div>
+        <div class="stat-val" id="statPending" style="color:#ffc800;">0</div>
+        <div class="stat-sub">Awaiting payment</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-label">Total Payments</div>
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-sub" id="statExpired" style="color:rgba(255,80,80,0.7);">0 expired</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('payments', this)">💳 Payments</button>
+      <button class="tab-btn" onclick="switchTab('withdrawals', this)">💸 Withdrawals</button>
+    </div>
+
+    <div id="tab-payments">
+      <div class="filter-bar">
+        <select class="filter-select" id="filterStatus" onchange="resetAndRenderPayments()">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="settled">Settled</option>
+          <option value="expired">Expired</option>
+        </select>
+        <select class="filter-select" id="filterDate" onchange="resetAndRenderPayments()">
+          <option value="">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search invoice ID..." oninput="resetAndRenderPayments()">
+        <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Invoice ID / Time</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>City</th>
+                <th>Country</th>
+                <th>Expires In</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsBody">
+              <tr><td colspan="8" class="m-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-list" id="mobilePaymentsList">
+          <div class="m-empty">Loading...</div>
+        </div>
+        <div class="pagination" id="payPagination"></div>
+        <div class="table-footer" id="paymentsFooter"></div>
+      </div>
+    </div>
+
+    <div id="tab-withdrawals" style="display:none;">
+      <div class="filter-bar" style="justify-content:space-between;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; flex:1;">
+          <input type="number" id="wdAmount" class="search-input" placeholder="Amount ($)" style="max-width:120px;" min="1">
+          <input type="text" id="wdNote" class="search-input" placeholder="Note (e.g. to CashApp)">
+          <button class="refresh-btn" onclick="submitWithdrawal()" style="background:rgba(0,200,81,0.15); border-color:rgba(0,200,81,0.4);">💳 Withdraw</button>
+        </div>
+        <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Amount</th>
+                <th>Note</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawalsBody">
+              <tr><td colspan="4" class="m-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-list" id="mobileWithdrawalsList">
+          <div class="m-empty">Loading...</div>
+        </div>
+        <div class="table-footer" id="withdrawalsFooter"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Red Rose Supabase Credentials
+const SUPABASE_URL = 'https://dirokbqnuosazuwhbdhs.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpcm9rYnFudW9zYXp1d2hiZGhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MDAwOTksImV4cCI6MjA5ODk3NjA5OX0.UTHzC66WjL37dNgc-VWNswH-nCvAvgvEDpz8KYsQp-A';
+
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'red-rose@2026';
+const PER_PAGE = 25;
+
+let allPayments = [];
+let allWithdrawals = [];
+let currentPayPage = 1;
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    sessionStorage.setItem('adminAuth', 'true');
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+    startCountdownTick();
+  } else {
+    const err = document.getElementById('loginError');
+    err.style.display = 'block';
+    err.style.animation = 'none';
+    setTimeout(() => err.style.animation = '', 10);
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('adminAuth');
+  location.reload();
+}
+
+if (sessionStorage.getItem('adminAuth') === 'true') {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+async function loadData() {
+  await Promise.all([fetchPayments(), fetchWithdrawals()]);
+  updateStats();
+  renderPayments();
+  renderWithdrawals();
+  const el = document.getElementById('lastUpdated');
+  el.textContent = 'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  el.classList.add('show');
+}
+
+async function fetchPayments() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    let data = await res.json();
+
+    // Check if error
+    if (data.error) {
+      console.error("Supabase Error:", data.error);
+      return;
+    }
+
+    const now = new Date();
+
+    allPayments = data.map(p => {
+      // Dynamic Expiration Logic: USDC = 15m, BTC = 60m
+      p._expireMins = (p.payment_type && p.payment_type.toLowerCase() === 'usdc') ? 15 : 60;
+
+      // Fix: Check for both 'new' and 'pending'
+      if (p.status === 'new' || p.status === 'pending') {
+        const diffMin = (now - new Date(p.created_at)) / 60000;
+        if (diffMin > p._expireMins) p._uiExpired = true;
+      }
+      return p;
+    });
+  } catch(e) { console.error("Fetch Payments Error:", e); }
+}
+
+async function fetchWithdrawals() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/withdrawals?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    let data = await res.json();
+    if(data.error) return;
+    allWithdrawals = data;
+  } catch(e) { console.error("Fetch Withdrawals Error:", e); }
+}
+
+function updateStats() {
+  const settled = allPayments.filter(p => p.status === 'settled' || p.status === 'completed' || p.status === 'paid');
+  const pending = allPayments.filter(p => (p.status === 'new' || p.status === 'pending') && !p._uiExpired);
+  const expired = allPayments.filter(p => p.status === 'expired' || p._uiExpired);
+
+  const totalSettled = settled.reduce((s,p) => s + parseFloat(p.amount || 0), 0);
+  const totalWithdrawn = allWithdrawals.reduce((s,w) => s + parseFloat(w.amount || 0), 0);
+  const available = totalSettled - totalWithdrawn;
+
+  document.getElementById('statSettled').textContent = '$' + totalSettled.toFixed(2);
+  document.getElementById('statSettledCount').textContent = settled.length + ' payments';
+
+  document.getElementById('statAvailable').textContent = '$' + available.toFixed(2);
+
+  document.getElementById('statPending').textContent = pending.length;
+  document.getElementById('statTotal').textContent = allPayments.length;
+  document.getElementById('statExpired').textContent = expired.length + ' expired';
+}
+
+function fmtDate(str) {
+  return new Date(str).toLocaleString([], {
+    month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+  });
+}
+function fmtTime(str) {
+  return new Date(str).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function getExpireHtml(p, effectiveStatus) {
+  if (effectiveStatus === 'expired') return '<span class="expired-text">Expired</span>';
+  if ((p.status === 'new' || p.status === 'pending') && !p._uiExpired) {
+    const expireAt = new Date(new Date(p.created_at).getTime() + p._expireMins * 60000);
+    const diff = Math.max(0, Math.floor((expireAt - new Date()) / 1000));
+    const m = Math.floor(diff/60), s = diff%60;
+    return `<span class="expire-text" data-expire="${expireAt.toISOString()}">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+  }
+  return '-';
+}
+
+function getFilteredPayments() {
+  const statusFilter = document.getElementById('filterStatus').value;
+  const dateFilter = document.getElementById('filterDate').value;
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  return allPayments.filter(p => {
+    let es = p.status;
+    if (p._uiExpired) es = 'expired';
+
+    // Fix: Treat 'new' and 'pending' as the same thing for the filter
+    if (statusFilter === 'pending' && (es !== 'pending' && es !== 'new')) return false;
+    else if (statusFilter && statusFilter !== 'pending' && es !== statusFilter) return false;
+
+    if (search && !(p.invoice_id||'').toLowerCase().includes(search)) return false;
+    if (dateFilter) {
+      const d = new Date(p.created_at), now = new Date();
+      if (dateFilter === 'today') { const t=new Date(); t.setHours(0,0,0,0); if(d<t) return false; }
+      else if (dateFilter === 'week') { const w=new Date(); w.setDate(w.getDate()-7); if(d<w) return false; }
+      else if (dateFilter === 'month') { const m=new Date(); m.setDate(m.getDate()-30); if(d<m) return false; }
+    }
+    return true;
+  });
+}
+
+function resetAndRenderPayments() {
+  currentPayPage = 1;
+  renderPayments();
+}
+
+function changePage(page) {
+  currentPayPage = page;
+  renderPayments();
+}
+
+function renderPayments() {
+  const filtered = getFilteredPayments();
+  const tbody = document.getElementById('paymentsBody');
+  const mList = document.getElementById('mobilePaymentsList');
+  const pagUI = document.getElementById('payPagination');
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="m-empty">No payments found</td></tr>';
+    mList.innerHTML = '<div class="m-empty">No payments found</div>';
+    pagUI.innerHTML = '';
+    document.getElementById('paymentsFooter').textContent = '';
+    return;
+  }
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  if (currentPayPage > totalPages) currentPayPage = totalPages;
+  const start = (currentPayPage - 1) * PER_PAGE;
+  const paginated = filtered.slice(start, start + PER_PAGE);
+
+  tbody.innerHTML = paginated.map((p, index) => {
+    let es = p.status;
+    if (p._uiExpired) es = 'expired';
+    const shortId = (p.invoice_id||'').substring(0,18) + '...';
+    const globalIndex = start + index + 1;
+
+    const methodStr = p.payment_type ? p.payment_type.toUpperCase() : 'LIGHTNING';
+    const methodColor = methodStr === 'USDC' ? '#00C851' : (methodStr === 'ONCHAIN' ? '#f7931a' : '#ffc400');
+
+    return `<tr>
+      <td style="color:rgba(255,255,255,0.28);">${globalIndex}</td>
+      <td>
+        <div style="font-family:monospace;font-size:12px;color:rgba(255,255,255,0.55);" title="${p.invoice_id}">${shortId}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+          <span style="font-size:9px;font-weight:700;color:${methodColor};background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;">${methodStr}</span>
+          <div style="font-size:10px;color:rgba(255,255,255,0.25);">${fmtTime(p.created_at)}</div>
+        </div>
+      </td>
+      <td style="font-weight:800;color:#fff;font-size:15px;">$${parseFloat(p.amount||0).toFixed(2)}</td>
+      <td><span class="badge ${es}"><span class="badge-dot"></span>${es}</span></td>
+      <td style="color:rgba(255,255,255,0.45);">${p.city||'-'}</td>
+      <td style="color:rgba(255,255,255,0.45);">${p.country||'-'}</td>
+      <td>${getExpireHtml(p, es)}</td>
+      <td style="color:rgba(255,255,255,0.35);font-size:12px;">${fmtDate(p.created_at)}</td>
+    </tr>`;
+  }).join('');
+
+  mList.innerHTML = paginated.map((p) => {
+    let es = p.status;
+    if (p._uiExpired) es = 'expired';
+    const shortId = (p.invoice_id||'').substring(0,22) + '...';
+
+    const methodStr = p.payment_type ? p.payment_type.toUpperCase() : 'LIGHTNING';
+    const methodColor = methodStr === 'USDC' ? '#00C851' : (methodStr === 'ONCHAIN' ? '#f7931a' : '#ffc400');
+
+    let expirePart = '';
+    if (es === 'expired') expirePart = '<span class="m-expired-pill">Expired</span>';
+    else if ((p.status === 'new' || p.status === 'pending') && !p._uiExpired) {
+      const expireAt = new Date(new Date(p.created_at).getTime() + p._expireMins * 60000);
+      const diff = Math.max(0, Math.floor((expireAt-new Date())/1000));
+      const m = Math.floor(diff/60), s = diff%60;
+      expirePart = `<span class="m-expire" data-expire="${expireAt.toISOString()}">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+    }
+    return `<div class="m-card">
+      <div class="m-row">
+        <div class="m-left">
+          <div class="m-invoice" title="${p.invoice_id}">${shortId}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+            <span style="font-size:9px;font-weight:700;color:${methodColor};background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;">${methodStr}</span>
+            <div class="m-time" style="margin-top:0;">${fmtDate(p.created_at)}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="m-amount">$${parseFloat(p.amount||0).toFixed(2)}</div>
+          <div style="margin-top:4px;"><span class="badge ${es}"><span class="badge-dot"></span>${es}</span></div>
+        </div>
+      </div>
+      <div class="m-meta">
+        ${p.city ? `<span class="m-pill">📍 ${p.city}${p.country ? ', '+p.country : ''}</span>` : ''}
+        ${expirePart}
+      </div>
+    </div>`;
+  }).join('');
+
+  if (totalPages > 1) {
+    let pButtons = `<button class="page-btn" onclick="changePage(${currentPayPage - 1})" ${currentPayPage === 1 ? 'disabled' : ''}>‹</button>`;
+    let startPage = Math.max(1, currentPayPage - 2);
+    let endPage = Math.min(totalPages, currentPayPage + 2);
+    for (let i = startPage; i <= endPage; i++) {
+      pButtons += `<button class="page-btn ${i === currentPayPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+    }
+    pButtons += `<button class="page-btn" onclick="changePage(${currentPayPage + 1})" ${currentPayPage === totalPages ? 'disabled' : ''}>›</button>`;
+    pagUI.innerHTML = pButtons;
+  } else {
+    pagUI.innerHTML = '';
+  }
+
+  const total = filtered.reduce((s,p) => s+parseFloat(p.amount||0), 0);
+  document.getElementById('paymentsFooter').textContent =
+    `Showing ${start + 1}-${Math.min(start + PER_PAGE, filtered.length)} of ${filtered.length} filtered payments · $${total.toFixed(2)}`;
+}
+
+function renderWithdrawals() {
+  const filtered = allWithdrawals;
+  const tbody = document.getElementById('withdrawalsBody');
+  const mList = document.getElementById('mobileWithdrawalsList');
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="m-empty">No withdrawals found</td></tr>';
+    mList.innerHTML = '<div class="m-empty">No withdrawals found</div>';
+    document.getElementById('withdrawalsFooter').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((w,i) => {
+    return `<tr>
+      <td style="color:rgba(255,255,255,0.28);">${i+1}</td>
+      <td style="font-weight:800;color:#ff4d4d;font-size:15px;">-$${parseFloat(w.amount||0).toFixed(2)}</td>
+      <td style="color:rgba(255,255,255,0.6);">${w.note || '-'}</td>
+      <td style="color:rgba(255,255,255,0.35);font-size:12px;">${fmtDate(w.created_at)}</td>
+    </tr>`;
+  }).join('');
+
+  mList.innerHTML = filtered.map((w,i) => {
+    return `<div class="m-card-w">
+      <div class="m-row">
+        <div class="m-left">
+          <div class="m-amount" style="font-size:20px;font-weight:800;color:#ff4d4d;">-$${parseFloat(w.amount||0).toFixed(2)}</div>
+          <div class="m-addr" style="color:rgba(255,255,255,0.6);">${w.note || 'No note'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          <div class="m-time">${fmtDate(w.created_at)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('withdrawalsFooter').textContent = `${filtered.length} withdrawals`;
+}
+
+async function submitWithdrawal() {
+  const amt = parseFloat(document.getElementById('wdAmount').value);
+  const note = document.getElementById('wdNote').value || '';
+  if (!amt || amt <= 0) return alert('Enter a valid amount');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/withdrawals`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ amount: amt, note: note })
+    });
+
+    if(!res.ok) {
+        alert("Make sure you have created the 'withdrawals' table with RLS disabled!");
+        return;
+    }
+
+    document.getElementById('wdAmount').value = '';
+    document.getElementById('wdNote').value = '';
+    loadData(); 
+  } catch(e) { console.error(e); }
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-payments').style.display = tab==='payments' ? 'block' : 'none';
+  document.getElementById('tab-withdrawals').style.display = tab==='withdrawals' ? 'block' : 'none';
+}
+
+function startCountdownTick() {
+  setInterval(() => {
+    document.querySelectorAll('[data-expire]').forEach(el => {
+      const diff = Math.max(0, Math.floor((new Date(el.dataset.expire) - new Date()) / 1000));
+      const m = Math.floor(diff/60), s = diff%60;
+      el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if (diff === 0) el.className = el.classList.contains('m-expire') ? 'm-expired-pill' : 'expired-text';
+    });
+  }, 1000);
+}
+
+if (sessionStorage.getItem('adminAuth') === 'true') {
+  loadData();
+  startCountdownTick();
+  setInterval(loadData, 30000); 
+}
+</script>
+</body>
+</html>
