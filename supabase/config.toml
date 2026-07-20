@@ -1,0 +1,5 @@
+# Supabase Configuration
+# This file is used by the Supabase CLI
+
+[functions."btcpay-webhook"]
+verify_jwt = false
