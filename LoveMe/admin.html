@@ -95,7 +95,7 @@ tbody tr:hover { background:rgba(255,255,255,0.02); }
 .m-invoice { font-family:monospace; font-size:12px; color:rgba(255,255,255,0.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
 .m-time { font-size:11px; color:rgba(255,255,255,0.28); margin-top:3px; font-weight:500; }
 .m-amount { font-size:20px; font-weight:800; color:#fff; letter-spacing:-0.5px; }
-.m-meta { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.m-meta { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; width: 100%; }
 .m-pill { font-size:11px; color:rgba(255,255,255,0.35); background:rgba(255,255,255,0.05); padding:3px 9px; border-radius:999px; font-weight:600; }
 .m-expire { font-size:12px; color:rgba(255,200,0,0.85); font-weight:700; background:rgba(255,200,0,0.07); padding:3px 9px; border-radius:999px; }
 .m-expired-pill { font-size:12px; color:#ff5050; font-weight:700; background:rgba(255,80,80,0.07); padding:3px 9px; border-radius:999px; }
@@ -118,6 +118,12 @@ tbody tr:hover { background:rgba(255,255,255,0.02); }
 ::-webkit-scrollbar { width:5px; height:5px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:99px; }
+
+/* 🟢 MARK SYSTEM CSS 🟢 */
+.is-marked { background: rgba(0, 200, 81, 0.12) !important; border-left: 3px solid #00C851 !important; }
+.btn-mark { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; margin-left: auto; }
+.btn-mark:hover { background: rgba(255, 255, 255, 0.2); }
+.btn-mark.marked-active { background: #00C851; color: #000; border-color: #00C851; }
 </style>
 </head>
 <body>
@@ -281,6 +287,18 @@ let allPayments = [];
 let allWithdrawals = [];
 let currentPayPage = 1;
 
+// 🟢 MARK SYSTEM LOGIC 🟢
+function toggleMark(invoiceId) {
+  let markedList = JSON.parse(localStorage.getItem('myMarkedInvoices') || '[]');
+  if (markedList.includes(invoiceId)) {
+    markedList = markedList.filter(id => id !== invoiceId); // Unmark
+  } else {
+    markedList.push(invoiceId); // Mark
+  }
+  localStorage.setItem('myMarkedInvoices', JSON.stringify(markedList));
+  renderPayments(); // Re-render to update UI
+}
+
 function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
@@ -437,6 +455,9 @@ function renderPayments() {
   const mList = document.getElementById('mobilePaymentsList');
   const pagUI = document.getElementById('payPagination');
 
+  // 🟢 Fetch Marked list from Local Storage
+  const markedList = JSON.parse(localStorage.getItem('myMarkedInvoices') || '[]');
+
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="m-empty">No payments found</td></tr>';
     mList.innerHTML = '<div class="m-empty">No payments found</div>';
@@ -459,7 +480,10 @@ function renderPayments() {
     const methodStr = p.payment_type ? p.payment_type.toUpperCase() : 'LIGHTNING';
     const methodColor = methodStr === 'USDC' ? '#00C851' : (methodStr === 'ONCHAIN' ? '#f7931a' : '#ffc400');
 
-    return `<tr>
+    // Check if this row is marked
+    const isMarked = markedList.includes(p.invoice_id);
+
+    return `<tr class="${isMarked ? 'is-marked' : ''}">
       <td style="color:rgba(255,255,255,0.28);">${globalIndex}</td>
       <td>
         <div style="font-family:monospace;font-size:12px;color:rgba(255,255,255,0.55);" title="${p.invoice_id}">${shortId}</div>
@@ -469,7 +493,14 @@ function renderPayments() {
         </div>
       </td>
       <td style="font-weight:800;color:#fff;font-size:15px;">$${parseFloat(p.amount||0).toFixed(2)}</td>
-      <td><span class="badge ${es}"><span class="badge-dot"></span>${es}</span></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="badge ${es}"><span class="badge-dot"></span>${es}</span>
+          <button class="btn-mark ${isMarked ? 'marked-active' : ''}" onclick="toggleMark('${p.invoice_id}')" style="margin-left:0;">
+            ${isMarked ? '✓ Marked' : 'Mark'}
+          </button>
+        </div>
+      </td>
       <td style="color:rgba(255,255,255,0.45);">${p.city||'-'}</td>
       <td style="color:rgba(255,255,255,0.45);">${p.country||'-'}</td>
       <td>${getExpireHtml(p, es)}</td>
@@ -493,7 +524,11 @@ function renderPayments() {
       const m = Math.floor(diff/60), s = diff%60;
       expirePart = `<span class="m-expire" data-expire="${expireAt.toISOString()}">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
     }
-    return `<div class="m-card">
+
+    // Check if this card is marked
+    const isMarked = markedList.includes(p.invoice_id);
+
+    return `<div class="m-card ${isMarked ? 'is-marked' : ''}">
       <div class="m-row">
         <div class="m-left">
           <div class="m-invoice" title="${p.invoice_id}">${shortId}</div>
@@ -510,6 +545,9 @@ function renderPayments() {
       <div class="m-meta">
         ${p.city ? `<span class="m-pill">📍 ${p.city}${p.country ? ', '+p.country : ''}</span>` : ''}
         ${expirePart}
+        <button class="btn-mark ${isMarked ? 'marked-active' : ''}" onclick="toggleMark('${p.invoice_id}')">
+          ${isMarked ? '✓ Marked' : 'Mark'}
+        </button>
       </div>
     </div>`;
   }).join('');
