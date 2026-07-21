@@ -124,6 +124,7 @@ tbody tr:hover { background:rgba(255,255,255,0.02); }
 .btn-mark { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; margin-left: auto; }
 .btn-mark:hover { background: rgba(255, 255, 255, 0.2); }
 .btn-mark.marked-active { background: #00C851; color: #000; border-color: #00C851; }
+.btn-mark:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -287,16 +288,39 @@ let allPayments = [];
 let allWithdrawals = [];
 let currentPayPage = 1;
 
-// 🟢 MARK SYSTEM LOGIC 🟢
-function toggleMark(invoiceId) {
-  let markedList = JSON.parse(localStorage.getItem('myMarkedInvoices') || '[]');
-  if (markedList.includes(invoiceId)) {
-    markedList = markedList.filter(id => id !== invoiceId); // Unmark
-  } else {
-    markedList.push(invoiceId); // Mark
+// 🟢 MARK SYSTEM LOGIC (DATABASE SYNCED) 🟢
+async function toggleMark(invoiceId, currentStatus, btnElement) {
+  const newStatus = !currentStatus;
+  btnElement.disabled = true; // Button disable to prevent multiple clicks
+  btnElement.textContent = '...';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?invoice_id=eq.${invoiceId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_marked: newStatus })
+    });
+
+    if (res.ok) {
+      // Update local array & UI instantly
+      const pIndex = allPayments.findIndex(x => x.invoice_id === invoiceId);
+      if (pIndex > -1) {
+        allPayments[pIndex].is_marked = newStatus;
+        renderPayments(); 
+      }
+    } else {
+      alert("Failed to sync mark status! Ensure RLS is disabled for updates.");
+      btnElement.disabled = false;
+    }
+  } catch(e) { 
+    console.error(e); 
+    btnElement.disabled = false;
   }
-  localStorage.setItem('myMarkedInvoices', JSON.stringify(markedList));
-  renderPayments(); // Re-render to update UI
 }
 
 function doLogin() {
@@ -455,9 +479,6 @@ function renderPayments() {
   const mList = document.getElementById('mobilePaymentsList');
   const pagUI = document.getElementById('payPagination');
 
-  // 🟢 Fetch Marked list from Local Storage
-  const markedList = JSON.parse(localStorage.getItem('myMarkedInvoices') || '[]');
-
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="m-empty">No payments found</td></tr>';
     mList.innerHTML = '<div class="m-empty">No payments found</div>';
@@ -480,8 +501,8 @@ function renderPayments() {
     const methodStr = p.payment_type ? p.payment_type.toUpperCase() : 'LIGHTNING';
     const methodColor = methodStr === 'USDC' ? '#00C851' : (methodStr === 'ONCHAIN' ? '#f7931a' : '#ffc400');
 
-    // Check if this row is marked
-    const isMarked = markedList.includes(p.invoice_id);
+    // 🟢 Read from database column instead of local storage
+    const isMarked = p.is_marked === true;
 
     return `<tr class="${isMarked ? 'is-marked' : ''}">
       <td style="color:rgba(255,255,255,0.28);">${globalIndex}</td>
@@ -496,7 +517,7 @@ function renderPayments() {
       <td>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="badge ${es}"><span class="badge-dot"></span>${es}</span>
-          <button class="btn-mark ${isMarked ? 'marked-active' : ''}" onclick="toggleMark('${p.invoice_id}')" style="margin-left:0;">
+          <button class="btn-mark ${isMarked ? 'marked-active' : ''}" onclick="toggleMark('${p.invoice_id}', ${isMarked}, this)" style="margin-left:0;">
             ${isMarked ? '✓ Marked' : 'Mark'}
           </button>
         </div>
@@ -525,8 +546,8 @@ function renderPayments() {
       expirePart = `<span class="m-expire" data-expire="${expireAt.toISOString()}">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
     }
 
-    // Check if this card is marked
-    const isMarked = markedList.includes(p.invoice_id);
+    // 🟢 Read from database column instead of local storage
+    const isMarked = p.is_marked === true;
 
     return `<div class="m-card ${isMarked ? 'is-marked' : ''}">
       <div class="m-row">
@@ -545,7 +566,7 @@ function renderPayments() {
       <div class="m-meta">
         ${p.city ? `<span class="m-pill">📍 ${p.city}${p.country ? ', '+p.country : ''}</span>` : ''}
         ${expirePart}
-        <button class="btn-mark ${isMarked ? 'marked-active' : ''}" onclick="toggleMark('${p.invoice_id}')">
+        <button class="btn-mark ${isMarked ? 'marked-active' : ''}" onclick="toggleMark('${p.invoice_id}', ${isMarked}, this)">
           ${isMarked ? '✓ Marked' : 'Mark'}
         </button>
       </div>
