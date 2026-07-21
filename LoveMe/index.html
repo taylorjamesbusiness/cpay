@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pay Love Me</title>
+
+<meta property="og:title" content="Pay Love Me">
+<meta property="og:description" content="Pay directly from your Cash balance. No need to buy or convert any crypto.">
+<meta property="og:image" content="https://cpay-cash.app/LoveMe/preview.png?v=2">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://cpay-cash.app/LoveMe/preview.png?v=2">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300D632'/><text x='50' y='72' font-size='65' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>$</text></svg>" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ====== RESET & BASE ====== */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html { background: #00D632; }
+body { 
+  margin: 0; min-height: 100dvh; display: flex; flex-direction: column; 
+  background: #00D632; font-family: 'DM Sans', sans-serif; 
+  overscroll-behavior: none; color: #000;
+}
+
+/* ====== DESKTOP FIX (PREMIUM FEEL) ====== */
+@media (min-width: 600px) {
+  html, body { background: #0a0a0a !important; align-items: center; justify-content: center; }
+  #app-wrapper { 
+    width: 100%; max-width: 400px; height: 90vh; max-height: 850px; min-height: 750px;
+    background: #00D632 !important; border-radius: 36px; 
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 10px #111, 0 0 0 14px #222; 
+    overflow: hidden; position: relative;
+  }
+}
+#app-wrapper {
+  flex: 1; width: 100%; display: flex; flex-direction: column; 
+  background: #00D632; margin: 0 auto;
+}
+
+/* ====== TOP BAR ====== */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 24px 0; }
+.topbar-name { font-size:18px; font-weight:700; color:#000; letter-spacing:-0.3px; }
+.topbar-avatar { 
+  width:36px; height:36px; background:rgba(0,0,0,0.12); border-radius:50%; 
+  display:flex; align-items:center; justify-content:center; 
+  font-size:15px; font-weight:800; color:#000;
+}
+
+/* ====== AMOUNT DISPLAY ====== */
+.amount-display { flex:1; display:flex; align-items:center; justify-content:center; padding:10px 20px; min-height: 140px; }
+.amount-text { 
+  font-size:80px; font-weight:700; color:#000; letter-spacing:-2px; 
+  line-height:1; word-break:break-all; text-align:center;
+}
+
+/* ====== KEYPAD ====== */
+.keypad-section { padding:0 30px 15px; }
+.keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:320px; margin:0 auto; }
+.key { 
+  background:transparent; border:none; border-radius: 16px; 
+  font-size:32px; font-weight:500; color:#000; padding:16px 0; 
+  cursor:pointer; font-family:'DM Sans',sans-serif; transition: all 0.15s ease; 
+}
+.key:active { background:rgba(0,0,0,0.08); transform:scale(0.95); }
+.key-backspace { font-size:26px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+
+/* ====== QUICK AMOUNTS & PAY ACTION ====== */
+.action-section { padding:0 20px 20px; display:flex; flex-direction:column; gap:12px; }
+
+.quick-amounts { display:none; flex-wrap:wrap; gap:8px; justify-content:center; padding-bottom:10px; }
+.quick-amounts.visible { display:flex; animation: fadeInDown 0.3s ease; }
+.quick-chip { 
+  background:rgba(0,0,0,0.1); border:none; border-radius:999px; 
+  padding:12px 20px; font-size:16px; font-weight:600; color:#000; cursor:pointer; 
+  transition: all 0.2s;
+}
+.quick-chip:active { transform: scale(0.95); }
+.quick-chip.selected { background:#000; color:#00D632; }
+
+.quick-btn { 
+  width:100%; background:rgba(0,0,0,0.08); border:none; border-radius:18px; 
+  padding:16px; font-size:16px; font-weight:700; color:#000; cursor:pointer; 
+  transition: all 0.2s;
+}
+.quick-btn:active { background:rgba(0,0,0,0.15); transform:scale(0.98); }
+
+.pay-btn { 
+  width:100%; background:#000; color:#fff; border:none; border-radius:18px; 
+  padding:18px; font-size:18px; font-weight:700; cursor:pointer; 
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s;
+}
+.pay-btn:active:not(:disabled) { transform:scale(0.98); opacity: 0.9; }
+.pay-btn:disabled { opacity:0.7; cursor:not-allowed; }
+
+/* SPINNER */
+.btn-spinner { 
+  width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3); 
+  border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; 
+}
+.pay-btn.loading .btn-spinner { display: block; }
+
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes fadeInDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+/* ====== BOTTOM NAV ====== */
+.bottom-nav { 
+  display:flex; align-items:center; justify-content:space-between; 
+  padding:15px 24px 20px; flex-shrink: 0; margin-top: auto;
+}
+.bnav-left { width: 40px; display:flex; justify-content:flex-start; align-items:center; }
+.bnav-amount { font-size:14px; font-weight:700; color:#000; }
+
+.bnav-center { 
+  width:44px; height:44px; background:#00D632; border-radius:50%; 
+  display:flex; align-items:center; justify-content:center; 
+  font-size:22px; font-weight:800; color:#fff; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.2);
+}
+
+.bnav-right { width: 40px; display:flex; justify-content:flex-end; }
+.bnav-clock { 
+  width:24px; height:24px; border:2px solid #000; border-radius:50%; position:relative; 
+}
+.bnav-clock::after { content:''; position:absolute; width:2px; height:6px; background:#000; top:4px; left:50%; transform:translateX(-50%); border-radius:1px; }
+.bnav-clock::before { content:''; position:absolute; width:5px; height:2px; background:#000; top:50%; left:50%; transform:translateY(-50%); border-radius:1px; }
+
+</style>
+</head>
+<body>
+
+<div id="app-wrapper">
+
+  <div class="topbar">
+    <div class="topbar-name">Love Me</div>
+    <div class="topbar-avatar">L</div>
+  </div>
+
+  <div class="amount-display">
+    <div class="amount-text" id="amountDisplay">$0</div>
+  </div>
+
+  <div class="keypad-section">
+    <div class="keypad">
+      <button class="key" onclick="keyPress('1')">1</button>
+      <button class="key" onclick="keyPress('2')">2</button>
+      <button class="key" onclick="keyPress('3')">3</button>
+      <button class="key" onclick="keyPress('4')">4</button>
+      <button class="key" onclick="keyPress('5')">5</button>
+      <button class="key" onclick="keyPress('6')">6</button>
+      <button class="key" onclick="keyPress('7')">7</button>
+      <button class="key" onclick="keyPress('8')">8</button>
+      <button class="key" onclick="keyPress('9')">9</button>
+      <button class="key" onclick="keyPress('.')">.</button>
+      <button class="key" onclick="keyPress('0')">0</button>
+      <button class="key key-backspace" onclick="keyPress('back')">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path><line x1="18" y1="9" x2="12" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="action-section">
+    <div class="quick-amounts" id="quickAmounts">
+      <button class="quick-chip" onclick="setQuick(this,10)">$10</button>
+      <button class="quick-chip" onclick="setQuick(this,25)">$25</button>
+      <button class="quick-chip" onclick="setQuick(this,50)">$50</button>
+      <button class="quick-chip" onclick="setQuick(this,100)">$100</button>
+      <button class="quick-chip" onclick="setQuick(this,200)">$200</button>
+    </div>
+    <button class="quick-btn" onclick="toggleQuick()">Quick amount</button>
+
+    <button class="pay-btn" id="payBtn" onclick="submitPayment()">
+      <div class="btn-spinner"></div>
+      <span id="payBtnText">Pay</span>
+    </button>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bnav-left">
+      <span class="bnav-amount" id="navAmount">$0</span>
+    </div>
+    <div class="bnav-center">$</div>
+    <div class="bnav-right">
+      <div class="bnav-clock"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ⚠️ আপনার নতুন Supabase URL & Key (Admin প্যানেল থেকে নেওয়া)
+const SUPABASE_URL      = 'https://szvoroqtrdheuymqqpfk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dm9yb3F0cmRoZXV5bXFxcGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NjM4NTEsImV4cCI6MjEwMDEzOTg1MX0.EZJ9XSyHObM0f29FhDu2P0mOpHM7kBlNG-MjzBK9sm4';
+const BTCPAY_URL        = `${SUPABASE_URL}/functions/v1/btcpay-webhook`;
+const BTC_SECONDS       = 60 * 60; // 60 Minutes
+
+let rawInput     = '';
+let quickVisible = false;
+
+function formatDisplay(raw) {
+  if (!raw || raw === '') return '$0';
+  if (raw === '.') return '$0.';
+  const parts = raw.split('.');
+  const intPart = parseInt(parts[0] || '0', 10);
+  let result = '$' + intPart;
+  if (parts.length > 1) result += '.' + parts[1];
+  return result;
+}
+
+function getNumericValue() {
+  if (!rawInput || rawInput === '.') return 0;
+  return parseFloat(rawInput) || 0;
+}
+
+function updateDisplay() {
+  const val = getNumericValue();
+  document.getElementById('amountDisplay').textContent = formatDisplay(rawInput);
+  document.getElementById('navAmount').textContent = val > 0 ? '$' + val.toFixed(2) : '$0';
+}
+
+function keyPress(k) {
+  if (k === 'back') { rawInput = rawInput.slice(0, -1); }
+  else if (k === '.') { if (!rawInput.includes('.')) rawInput += '.'; }
+  else {
+    if (rawInput.includes('.')) {
+      if (rawInput.split('.')[1].length >= 2) return;
+    }
+    // Amount Limit Fix
+    let futureValue = parseFloat(rawInput + k);
+    if (futureValue > 2000) return; 
+
+    rawInput += k;
+  }
+  document.querySelectorAll('.quick-chip').forEach(c => c.classList.remove('selected'));
+  updateDisplay();
+}
+
+function setQuick(btn, amt) {
+  document.querySelectorAll('.quick-chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  rawInput = String(amt);
+  updateDisplay();
+}
+
+function toggleQuick() {
+  quickVisible = !quickVisible;
+  const el = document.getElementById('quickAmounts');
+  quickVisible ? el.classList.add('visible') : el.classList.remove('visible');
+}
+
+function showLoading() {
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  document.getElementById('payBtnText').textContent = "Generating...";
+}
+function hideLoading() {
+  const btn = document.getElementById('payBtn');
+  btn.disabled = false;
+  btn.classList.remove('loading');
+  document.getElementById('payBtnText').textContent = "Pay";
+}
+
+function getUserKey() {
+  let k = sessionStorage.getItem('pv_user_key');
+  if (k) return k;
+  k = crypto.randomUUID ? crypto.randomUUID() : `pv-${Date.now()}`;
+  sessionStorage.setItem('pv_user_key', k); return k;
+}
+
+async function submitPayment() {
+  const amount = getNumericValue();
+  if (!amount || amount < 2) {
+    alert('Minimum payment amount is $2');
+    return;
+  }
+
+  showLoading();
+  try {
+    let city = '', country = '';
+    try {
+      const ipRes = await fetch('https://ipapi.co/json/');
+      const ipData = await ipRes.json();
+      city = ipData.city || ''; country = ipData.country_name || '';
+    } catch (_) {}
+    const userKey = getUserKey();
+
+    // 🟢 DYNAMIC DOMAIN LOGIC
+    const dynamicDomain = window.location.origin + window.location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "");
+
+    const res = await fetch(BTCPAY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ action: 'create_btc_invoice', amount, paymentType: 'lightning', userKey, source: dynamicDomain, city, country }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Failed to create invoice');
+
+    let bolt11 = data.lightningCode || '';
+    if (bolt11.toLowerCase().startsWith('lightning:')) bolt11 = bolt11.slice(10);
+
+    const session = {
+      amount: Number(data.amount), invoiceId: data.invoiceId, paymentType: 'lightning',
+      payCode: bolt11, qrText: bolt11, cashAppUrl: `https://cash.app/launch/lightning/${bolt11}`,
+      secondsLeft: BTC_SECONDS, expiresAt: data.expiresAt || null,
+    };
+
+    sessionStorage.setItem('invoiceSession', JSON.stringify(session));
+    window.location.href = 'pay/invoice-btc.html'; 
+  } catch (e) {
+    hideLoading();
+    alert(`Error: ${e.message}`);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  sessionStorage.removeItem('invoiceSession');
+  updateDisplay();
+});
+</script>
+</body>
+</html>
