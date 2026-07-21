@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Scan Bitcoin QR – Cash App</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; background: #000; color: #fff; overflow: hidden; }
+
+/* Main Scanner Container */
+#step2 {
+  width: 100%; max-width: 430px; height: 100%; 
+  display: flex; flex-direction: column;
+  padding: 12px 20px 16px; position: relative;
+}
+
+/* Top Nav */
+.s2-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-shrink: 0; }
+.icon-btn, .help-btn {
+  background: rgba(255, 255, 255, 0.08); border: none; border-radius: 12px;
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 10px 16px; font-weight: 700; font-size: 14px;
+}
+.icon-btn { width: 44px; padding: 0; border-radius: 50%; }
+
+/* Title & QR */
+.scanner-title { font-size: 24px; font-weight: 700; line-height: 1.15; margin-bottom: 12px; letter-spacing: -0.5px; flex-shrink: 0; }
+.qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 0; }
+
+/* Awaiting Payment Text */
+.awaiting-text {
+  font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px; letter-spacing: 0.3px;
+  animation: pulseWait 1.5s infinite ease-in-out;
+}
+@keyframes pulseWait { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+.qr-outer-frame { border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 28px; padding: 12px; position: relative; }
+#qrcode { background: #fff; padding: 10px; border-radius: 16px; }
+#qrcode img { border-radius: 6px; }
+
+/* Cash App Logo inside QR */
+.qr-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 4px; border-radius: 10px; }
+.qr-logo-inner { background: #00D632; color: #fff; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; border-radius: 8px; font-family: 'Arial', sans-serif; }
+
+/* Info Cards */
+.info-card {
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px; padding: 10px 14px; margin-top: 8px; font-size: 12.5px; text-align: left;
+  line-height: 1.4; width: 100%;
+}
+
+/* Footer Buttons (Side by Side) */
+.action-footer { margin-top: 12px; width: 100%; display: flex; gap: 10px; justify-content: center; flex-shrink: 0; max-width: 360px; margin-inline: auto; }
+.pill-btn {
+  border: none; border-radius: 999px; padding: 15px 10px; font-size: 15px; font-weight: 700; 
+  width: 100%; cursor: pointer; transition: transform 0.1s, opacity 0.2s; font-family: 'DM Sans', sans-serif;
+}
+.btn-copy { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
+.btn-pay { background: #fff; color: #000; }
+.pill-btn:active { transform: scale(0.96); opacity: 0.9; }
+
+/* ====== SUCCESS UI (STEP 3) ====== */
+#step3 {
+  display: none; width: 100%; max-width: 430px; height: 100%;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px 20px; text-align: center; margin: 0 auto;
+}
+.success-icon {
+  width: 80px; height: 80px; background: #00C851; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; animation: pop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes pop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+.success-title { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.success-sub { color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-bottom: 8px; }
+.success-amount { font-size: 44px; font-weight: 800; color: #00C851; margin-bottom: 40px; }
+
+/* Modal */
+#howToPayModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+#howToPayModal.open { display: flex; }
+.modal-inner { width: 100%; max-width: 380px; background: #111; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 24px; }
+</style>
+</head>
+<body>
+
+<div id="step2">
+  <div class="s2-topbar">
+    <button class="icon-btn" onclick="goBack()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <button class="help-btn" onclick="openModal()">Help</button>
+  </div>
+
+  <div class="scanner-title">Scan a Bitcoin or<br>Lightning QR code</div>
+
+  <div class="qr-container">
+    <div class="awaiting-text">Awaiting payment...</div>
+
+    <a id="qrLink" href="#" target="_blank">
+      <div class="qr-outer-frame">
+        <div id="qrcode"></div>
+        <div class="qr-logo"><div class="qr-logo-inner">$</div></div>
+      </div>
+    </a>
+
+    <div style="width: 100%; max-width: 340px;">
+        <div class="info-card">★ If you have trouble scanning, you can copy the invoice address and use the paste option.</div>
+        <div class="info-card">
+            <div style="font-weight:700; margin-bottom:6px;">Your Cash Balance &rarr; My Lightning Address <span style="font-size:11px; opacity:0.6;">(no need to buy btc)</span></div>
+            <div style="font-size:11.5px; opacity:0.8;">Open Cash App &rarr; Open the QR Scanner &rarr; Paste this Address &rarr; Select the Funding Source (Cash Balance USD) &rarr; Confirm</div>
+        </div>
+    </div>
+  </div>
+
+  <div class="action-footer">
+    <button id="copyBtn" class="pill-btn btn-copy" onclick="copyAddress()">Copy address</button>
+    <button id="payBtn" class="pill-btn btn-pay" onclick="openCashApp()">Pay now</button>
+  </div>
+</div>
+
+<div id="step3">
+  <div class="success-icon">
+    <svg width="44" height="44" fill="none" stroke="#000" stroke-width="3" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+    </svg>
+  </div>
+  <div class="success-title">Payment Received!</div>
+  <div class="success-sub">Thank you for your payment</div>
+  <div class="success-amount" id="successAmount">$0.00</div>
+  <button class="pill-btn btn-pay" style="max-width: 340px;" onclick="clearSession()">Done</button>
+</div>
+
+<div id="howToPayModal" onclick="closeModal()">
+  <div class="modal-inner" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+        <h2 style="font-size:20px;">How to pay</h2>
+        <button onclick="closeModal()" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+    </div>
+    <div style="font-size:14px; line-height:1.6; opacity:0.8;">
+        1. Open Cash App and tap the <b>Money ($)</b> tab.<br>
+        2. Tap the <b>QR Scanner</b> icon (top-left).<br>
+        3. Scan or <b>Paste</b> the address.<br>
+        4. Select <b>Cash Balance (USD)</b> as funding source.<br>
+        5. Confirm with your PIN or Face ID.
+    </div>
+    <button class="pill-btn btn-pay" style="margin-top:20px;" onclick="closeModal()">Got it</button>
+  </div>
+</div>
+
+<script>
+// Supabase
+const SUPABASE_URL = 'https://szvoroqtrdheuymqqpfk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dm9yb3F0cmRoZXV5bXFxcGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NjM4NTEsImV4cCI6MjEwMDEzOTg1MX0.EZJ9XSyHObM0f29FhDu2P0mOpHM7kBlNG-MjzBK9sm4';
+
+let timerInterval, pollInterval;
+let currentPayCode = '';
+
+function showStep(n) {
+  document.getElementById('step2').style.display = n === 2 ? 'flex' : 'none';
+  document.getElementById('step3').style.display = n === 3 ? 'flex' : 'none';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem('invoiceSession');
+  if (!saved) { window.location.href = '../index.html'; return; }
+  const data = JSON.parse(saved);
+  currentPayCode = data.payCode || data.qrText;
+
+  // QR Code size slightly reduced to prevent scrolling
+  new QRCode(document.getElementById('qrcode'), { text: data.cashAppUrl || currentPayCode, width: 190, height: 190 });
+  document.getElementById('qrLink').href = data.cashAppUrl || '#';
+
+  startTimer(data.secondsLeft || 3600, data.invoiceId);
+  startPolling(data.invoiceId, data.amount);
+});
+
+// Button 1: Copy Address
+function copyAddress() {
+  if(!currentPayCode) return;
+  navigator.clipboard.writeText(currentPayCode);
+  const btn = document.getElementById('copyBtn');
+  btn.textContent = 'Copied!';
+  btn.style.background = '#00D632';
+  btn.style.color = '#000';
+  btn.style.border = 'none';
+
+  setTimeout(() => { 
+      btn.textContent = 'Copy address'; 
+      btn.style.background = 'rgba(255, 255, 255, 0.1)';
+      btn.style.color = '#fff';
+      btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+  }, 2000);
+}
+
+// Button 2: Open Cash App
+function openCashApp() {
+  const cashAppUrl = document.getElementById('qrLink').href;
+  if (cashAppUrl && cashAppUrl !== '#') {
+    window.location.href = cashAppUrl;
+  }
+}
+
+function openModal() { document.getElementById('howToPayModal').classList.add('open'); }
+function closeModal() { document.getElementById('howToPayModal').classList.remove('open'); }
+
+// Timer Logic
+function startTimer(sec, invoiceId) {
+  clearInterval(timerInterval);
+  let t = sec;
+  timerInterval = setInterval(() => {
+    if (t <= 0) {
+      clearInterval(timerInterval);
+      clearInterval(pollInterval);
+      sessionStorage.removeItem('invoiceSession');
+      window.location.href = '../index.html'; 
+      return;
+    }
+    const saved = sessionStorage.getItem('invoiceSession');
+    if (saved) {
+      const obj = JSON.parse(saved);
+      obj.secondsLeft = t;
+      sessionStorage.setItem('invoiceSession', JSON.stringify(obj));
+    }
+    t--;
+  }, 1000);
+}
+
+// Polling Logic
+function startPolling(invoiceId, amount) {
+  clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/btcpay-webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ checkStatus: true, invoiceId })
+      });
+      const data = await res.json();
+
+      if (data?.status === 'settled' || data?.status === 'Processing') {
+        clearInterval(pollInterval);
+        clearInterval(timerInterval);
+        sessionStorage.removeItem('invoiceSession');
+        showStep(3);
+        document.getElementById('successAmount').textContent = '$' + parseFloat(amount).toFixed(2);
+      }
+    } catch(e) {
+      console.error('Polling error', e);
+    }
+  }, 5000);
+}
+
+function goBack() { 
+    clearInterval(timerInterval);
+    clearInterval(pollInterval);
+    window.location.href = '../index.html'; 
+}
+
+function clearSession() {
+  sessionStorage.removeItem('invoiceSession');
+  window.location.href = '../index.html';
+}
+</script>
+</body>
+</html>
